@@ -6,19 +6,14 @@ function add_parametrs() {
     for (( k = 3; k < $#; k += 2)); do
       output_buffer=$output_buffer"\"name\": \"${!k}\", "
       next_index=$((k + 1))
-      output_buffer=$output_buffer"\"type\": \"${!next_index}\""
-      if [ $(( k + 2)) -lt $# ]; then
-        output_buffer=$output_buffer", "
-      else
-        output_buffer=$output_buffer" "
-      fi
+      output_buffer=$output_buffer"\"type\": \"${!next_index}\" "
     done
     output_buffer=$output_buffer"} ], "
 }
 
 # Check if the file is given an argument for the script
 if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 <filename>"
+    echo "Usage: $0 <filename>.kt"
     exit 1
 fi
 
@@ -65,8 +60,6 @@ for (( i = 0; i < ${#file_contents[@]}; i++ )); do
     output_buffer=$output_buffer" \"body\": \""
 
     for (( j = i; j < ${#file_contents[@]}; j++ )); do
-#      echo "${file_contents[j]}"
-#      echo "$nested_flag"
       if [[ ${file_contents[j]} =~ "fun" ]]; then
         nested_flag=$((nested_flag + 1))
       fi
@@ -79,16 +72,13 @@ for (( i = 0; i < ${#file_contents[@]}; i++ )); do
       if [[ ${file_contents[j]} =~ "}" ]]; then
         count_of_brackets=$((count_of_brackets - 1))
       fi
-      echo "$end_of_file"
+
       if [ $count_of_brackets -eq 0 ]; then
+        end_of_file=" } ]"$end_of_file
+        output_buffer=$output_buffer"\","
         if [ $nested_flag -eq 1 ]; then
-          output_buffer=$output_buffer"\""
-          end_of_file=" } ],"$end_of_file
           output_buffer=$output_buffer"$end_of_file"
           end_of_file=""
-        else
-          output_buffer=$output_buffer"\","
-          end_of_file="} ] "$end_of_file
         fi
         break
       fi
@@ -98,8 +88,7 @@ for (( i = 0; i < ${#file_contents[@]}; i++ )); do
   fi
 done
 
-#truncate -s -1 $output_filename
-output_buffer=$output_buffer"}"
+output_buffer=$output_buffer" }"
 
 echo "$output_buffer" | sed 's/\(.*\),/\1 /' > "$output_filename"
 
